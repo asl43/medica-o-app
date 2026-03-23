@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MedTrack v2 — Medicação Inteligente</title>
+
+<!-- ═══ PWA — Manifest & Theme ═══ -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b82f6" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)">
+<meta name="description" content="Sistema inteligente de controle de medicação familiar com alertas, estoque e histórico.">
+
+<!-- ═══ PWA — iOS / Safari ═══ -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MedTrack">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-startup-image" href="icons/icon-512.png">
+
+<!-- ═══ PWA — Android / Windows ═══ -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="MedTrack">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<!-- ═══ Open Graph (compartilhamento) ═══ -->
+<meta property="og:title" content="MedTrack — Medicação Inteligente">
+<meta property="og:description" content="Sistema de medicação familiar com alertas e histórico.">
+<meta property="og:type" content="website">
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════ */
+:root {
+  --r: 14px;
+  --r-sm: 9px;
+  --r-lg: 20px;
+  --f: 'Outfit', sans-serif;
+  --fm: 'Space Mono', monospace;
+  --ease: cubic-bezier(.4,0,.2,1);
+  --t: .25s var(--ease);
+}
+
+[data-theme="dark"] {
+  --bg:      #080b12;
+  --bg2:     #0e1320;
+  --bg3:     #141b2e;
+  --surf:    #1a2235;
+  --surf2:   #1f2940;
+  --bdr:     rgba(255,255,255,.07);
+  --bdr2:    rgba(255,255,255,.12);
+  --a:       #3b82f6;
+  --a2:      #6366f1;
+  --g:       #10b981;
+  --r-c:     #ef4444;
+  --w:       #f59e0b;
+  --p:       #ec4899;
+  --t1:      #f1f5f9;
+  --t2:      #94a3b8;
+  --t3:      #475569;
+  --glow:    rgba(59,130,246,.2);
+  --glow2:   rgba(99,102,241,.15);
+  --shadow:  0 8px 32px rgba(0,0,0,.5);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,.35);
+}
+
+[data-theme="light"] {
+  --bg:      #f8faff;
+  --bg2:     #eef2ff;
+  --bg3:     #e4eafb;
+  --surf:    #ffffff;
+  --surf2:   #f4f6ff;
+  --bdr:     rgba(0,0,0,.07);
+  --bdr2:    rgba(0,0,0,.12);
+  --a:       #2563eb;
+  --a2:      #4f46e5;
+  --g:       #059669;
+  --r-c:     #dc2626;
+  --w:       #d97706;
+  --p:       #db2777;
+  --t1:      #0f172a;
+  --t2:      #475569;
+  --t3:      #94a3b8;
+  --glow:    rgba(37,99,235,.12);
+  --glow2:   rgba(79,70,229,.1);
+  --shadow:  0 8px 32px rgba(0,0,0,.1);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,.06);
+}
+
+/* ═══════════════════════════════════
+   RESET
+═══════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--f);background:var(--bg);color:var(--t1);min-height:100vh;min-height:100dvh;overflow-x:hidden;transition:background var(--t),color var(--t);padding-bottom:env(safe-area-inset-bottom)}
+button{font-family:var(--f);cursor:pointer}
+input,select,textarea{font-family:var(--f)}
+::selection{background:var(--a);color:#fff}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:99px}
+
+/* ═══════════════════════════════════
+   SPLASH
+═══════════════════════════════════ */
+#splash{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:24px;
+  transition:opacity .7s var(--ease),transform .7s var(--ease);
+}
+#splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
+
+.sp-orbit{position:relative;width:120px;height:120px}
+.sp-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:2.5px solid transparent;
+}
+.sp-ring:nth-child(1){border-top-color:var(--a);animation:orbit 1.4s linear infinite}
+.sp-ring:nth-child(2){inset:14px;border-right-color:var(--a2);animation:orbit 2s linear infinite reverse}
+.sp-ring:nth-child(3){inset:28px;border-bottom-color:var(--g);animation:orbit 1.7s linear infinite}
+.sp-core{
+  position:absolute;inset:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--a),var(--a2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  box-shadow:0 0 30px var(--glow);
+  animation:breathe 2s ease-in-out infinite;
+}
+@keyframes orbit{to{transform:rotate(360deg)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+.sp-wordmark{
+  font-size:2.2rem;font-weight:900;letter-spacing:-.05em;
+  background:linear-gradient(90deg,var(--a),var(--a2),var(--p));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 3s ease-in-out infinite;
+  background-size:200%;
+}
+@keyframes shimmer{0%,100%{background-position:0%}50%{background-position:100%}}
+
+.sp-tag{font-size:.72rem;color:var(--t3);letter-spacing:.18em;text-transform:uppercase;font-family:var(--fm)}
+
+.sp-track{width:180px;height:2px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-top:4px}
+.sp-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--p));border-radius:99px;animation:spfill 2.5s var(--ease) forwards}
+@keyframes spfill{from{width:0}to{width:100%}}
+
+/* ═══════════════════════════════════
+   APP SHELL
+═══════════════════════════════════ */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.on{display:flex;animation:fadeUp .5s var(--ease)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════
+   HEADER
+═══════════════════════════════════ */
+.hdr{
+  position:sticky;top:0;z-index:200;
+  background:rgba(8,11,18,.85);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--bdr);
+}
+[data-theme="light"] .hdr{background:rgba(248,250,255,.88)}
+
+.hdr-in{
+  max-width:1100px;margin:0 auto;padding:0 18px;
+  height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand-logo{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--a),var(--a2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;box-shadow:0 4px 14px var(--glow);flex-shrink:0;
+}
+.brand-name{font-size:1.1rem;font-weight:900;color:var(--t1);letter-spacing:-.04em}
+.brand-name em{color:var(--a);font-style:normal}
+
+/* PACIENTE ATIVO */
+.patient-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 12px 5px 6px;
+  background:var(--surf);border:1px solid var(--bdr2);
+  border-radius:99px;cursor:pointer;transition:all var(--t);
+}
+.patient-pill:hover{border-color:var(--a);background:var(--surf2)}
+.patient-avatar{
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,var(--a),var(--p));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.patient-pill-name{font-size:.82rem;font-weight:600;color:var(--t1);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.patient-pill-arrow{font-size:.65rem;color:var(--t3)}
+
+.hdr-right{display:flex;align-items:center;gap:7px}
+
+.ic-btn{
+  width:36px;height:36px;border-radius:9px;
+  border:1px solid var(--bdr);background:var(--surf);
+  color:var(--t2);display:flex;align-items:center;justify-content:center;
+  font-size:15px;transition:all var(--t);
+}
+.ic-btn:hover{background:var(--surf2);color:var(--t1);border-color:var(--a);transform:scale(1.06)}
+
+.sync-pill{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;background:var(--bg3);
+  border:1px solid var(--bdr);border-radius:99px;
+  font-family:var(--fm);font-size:.68rem;color:var(--t3);
+}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);transition:background var(--t)}
+.sync-dot.on{background:var(--g);animation:blink 2s infinite}
+.sync-dot.sy{background:var(--w);animation:blink .5s infinite}
+.sync-dot.er{background:var(--r-c)}
+@keyframes blink{50%{opacity:.3}}
+
+.btn-exit{
+  display:flex;align-items:center;gap:6px;
+  padding:0 13px;height:34px;border-radius:9px;
+  border:1px solid var(--bdr);background:var(--surf);
+  color:var(--r-c);font-size:.78rem;font-weight:700;
+  transition:all var(--t);
+}
+.btn-exit:hover{background:rgba(239,68,68,.1);border-color:var(--r-c)}
+
+/* ═══════════════════════════════════
+   NAV TABS
+═══════════════════════════════════ */
+.nav-tabs{
+  background:var(--bg2);border-bottom:1px solid var(--bdr);
+  overflow-x:auto;scrollbar-width:none;
+}
+.nav-tabs::-webkit-scrollbar{display:none}
+.tabs-in{
+  max-width:1100px;margin:0 auto;padding:0 18px;
+  display:flex;gap:2px;
+}
+.tab{
+  display:flex;align-items:center;gap:7px;
+  padding:0 16px;height:46px;
+  border:none;background:none;
+  color:var(--t3);font-size:.83rem;font-weight:600;
+  border-bottom:2.5px solid transparent;
+  transition:all var(--t);white-space:nowrap;
+}
+.tab:hover{color:var(--t2)}
+.tab.active{color:var(--a);border-bottom-color:var(--a)}
+.tab-badge{
+  min-width:18px;height:18px;border-radius:99px;padding:0 5px;
+  background:var(--r-c);color:#fff;
+  font-size:.65rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ═══════════════════════════════════
+   MAIN / PAGES
+═══════════════════════════════════ */
+.main{max-width:1100px;margin:0 auto;padding:24px 18px 80px;width:100%;flex:1}
+
+.page{display:none}
+.page.active{display:block;animation:fadeUp .3s var(--ease)}
+
+/* ═══════════════════════════════════
+   COMPONENTES COMUNS
+═══════════════════════════════════ */
+
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+/* Panel */
+.panel{
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r-lg);padding:22px;
+  box-shadow:var(--shadow-sm);
+}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.pt{
+  display:flex;align-items:center;gap:9px;
+  font-size:.92rem;font-weight:700;color:var(--t1);
+}
+.pi{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--a),var(--a2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+  box-shadow:0 2px 8px var(--glow);
+}
+
+/* Stat card */
+.stat{
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r);padding:16px 18px;
+  box-shadow:var(--shadow-sm);
+  transition:transform var(--t),border-color var(--t);
+}
+.stat:hover{transform:translateY(-2px)}
+.stat-lbl{font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.stat-val{font-size:1.9rem;font-weight:900;font-family:var(--fm);line-height:1}
+.stat-sub{font-size:.72rem;color:var(--t2);margin-top:3px}
+.c-a{color:var(--a)}.c-g{color:var(--g)}.c-w{color:var(--w)}.c-r{color:var(--r-c)}.c-p{color:var(--p)}
+
+/* Form */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:.7rem;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.08em}
+.fi{
+  height:40px;padding:0 12px;
+  border-radius:var(--r-sm);border:1.5px solid var(--bdr2);
+  background:var(--bg);color:var(--t1);
+  font-family:var(--f);font-size:.88rem;
+  transition:border-color var(--t),box-shadow var(--t);outline:none;width:100%;
+}
+.fi:focus{border-color:var(--a);box-shadow:0 0 0 3px var(--glow)}
+.fi::placeholder{color:var(--t3)}
+select.fi{cursor:pointer}
+textarea.fi{height:auto;padding:10px 12px;resize:vertical;min-height:72px}
+
+/* Button */
+.btn{
+  height:40px;border-radius:var(--r-sm);border:none;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  font-family:var(--f);font-size:.85rem;font-weight:700;
+  transition:all var(--t);padding:0 16px;
+}
+.btn-p{background:linear-gradient(135deg,var(--a),var(--a2));color:#fff;box-shadow:0 4px 14px var(--glow)}
+.btn-p:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 20px var(--glow)}
+.btn-s{background:var(--bg3);color:var(--t2);border:1px solid var(--bdr2)}
+.btn-s:hover{background:var(--surf2);color:var(--t1);border-color:var(--a)}
+.btn-g{background:var(--g);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.2)}
+.btn-g:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-r{background:transparent;color:var(--r-c);border:1px solid var(--r-c)}
+.btn-r:hover{background:rgba(239,68,68,.1)}
+.btn-sm{height:32px;font-size:.75rem;padding:0 10px}
+.btn-xs{height:28px;font-size:.72rem;padding:0 9px}
+.btn:disabled{opacity:.38;cursor:default;transform:none!important;filter:none!important}
+
+/* Badge */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:99px;
+  font-size:.7rem;font-weight:700;
+}
+.badge-a{background:rgba(59,130,246,.12);color:var(--a)}
+.badge-g{background:rgba(16,185,129,.12);color:var(--g)}
+.badge-r{background:rgba(239,68,68,.12);color:var(--r-c)}
+.badge-w{background:rgba(245,158,11,.12);color:var(--w)}
+.badge-p{background:rgba(236,72,153,.12);color:var(--p)}
+
+/* Toast */
+.tc{position:fixed;bottom:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:8px}
+.toast{
+  min-width:250px;padding:12px 16px;border-radius:var(--r-sm);
+  background:var(--surf2);border:1px solid var(--bdr2);
+  box-shadow:var(--shadow);font-size:.83rem;color:var(--t1);
+  display:flex;align-items:center;gap:9px;
+  animation:tIn .3s var(--ease);
+}
+.toast.success{border-left:3px solid var(--g)}
+.toast.error{border-left:3px solid var(--r-c)}
+.toast.info{border-left:3px solid var(--a)}
+.toast.warn{border-left:3px solid var(--w)}
+@keyframes tIn{from{opacity:0;transform:translateX(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateX(16px) scale(.96)}}
+
+/* Modal */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.65);
+  backdrop-filter:blur(8px);z-index:9000;
+  display:none;align-items:center;justify-content:center;
+  padding:20px;animation:ovIn .25s var(--ease);
+}
+.overlay.show{display:flex}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--surf);border:1px solid var(--bdr2);
+  border-radius:var(--r-lg);padding:28px 26px;
+  width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
+  animation:mIn .3s var(--ease);
+}
+.modal.wide{max-width:620px}
+@keyframes mIn{from{opacity:0;transform:scale(.93) translateY(10px)}to{opacity:1;transform:none}}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:1.05rem;font-weight:800;color:var(--t1)}
+.close-btn{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--bdr);
+  background:transparent;color:var(--t2);font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all var(--t);
+}
+.close-btn:hover{background:var(--bg3);color:var(--t1)}
+.modal-body{display:flex;flex-direction:column;gap:14px}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* Divider */
+.divider{height:1px;background:var(--bdr);margin:4px 0}
+
+/* Empty state */
+.empty{text-align:center;padding:36px 20px;color:var(--t3)}
+.empty-ico{font-size:2.6rem;opacity:.4;margin-bottom:10px}
+.empty p{font-size:.85rem;line-height:1.6}
+
+/* ═══════════════════════════════════
+   PAGE: DASHBOARD (aba 1)
+═══════════════════════════════════ */
+
+/* Relógio */
+.clock-box{
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid var(--bdr);border-radius:var(--r-lg);
+  padding:20px;text-align:center;margin-bottom:18px;
+  position:relative;overflow:hidden;
+}
+.clock-box::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:140px;height:140px;border-radius:50%;
+  background:radial-gradient(circle,var(--glow),transparent 70%);
+  pointer-events:none;
+}
+.clock-time{font-family:var(--fm);font-size:3rem;font-weight:700;color:var(--a);line-height:1}
+.clock-date{font-size:.8rem;color:var(--t2);margin-top:5px;text-transform:capitalize}
+
+/* Barra progresso */
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.prog-lbl{font-size:.75rem;color:var(--t2)}
+.prog-pct{font-family:var(--fm);font-size:.85rem;font-weight:700;color:var(--a)}
+.prog-track{height:8px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:14px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--p));border-radius:99px;transition:width 1s var(--ease);min-width:0}
+
+/* Próxima dose */
+.next-dose{
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(99,102,241,.08));
+  border:1px solid rgba(59,130,246,.2);border-radius:var(--r);padding:14px;
+}
+.next-ico{font-size:1.8rem}
+.next-info strong{font-size:.9rem;color:var(--t1);font-weight:700;display:block}
+.next-info span{font-size:.75rem;color:var(--t2)}
+
+/* Lista medicações */
+.filter-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.fb{
+  padding:5px 13px;border-radius:99px;
+  border:1.5px solid var(--bdr);background:transparent;
+  color:var(--t2);font-size:.76rem;font-weight:700;font-family:var(--f);
+  transition:all var(--t);
+}
+.fb.on{background:var(--a);border-color:var(--a);color:#fff;box-shadow:0 2px 10px var(--glow)}
+.fb:not(.on):hover{border-color:var(--a);color:var(--t1)}
+
+.med-list{display:flex;flex-direction:column;gap:9px;max-height:440px;overflow-y:auto;padding-right:4px}
+
+.mc{
+  background:var(--bg);border:1.5px solid var(--bdr);
+  border-radius:var(--r-sm);padding:13px 15px;
+  display:flex;align-items:center;gap:13px;
+  transition:all var(--t);animation:slideIn .3s var(--ease) both;position:relative;overflow:hidden;
+}
+.mc::before{content:'';position:absolute;left:0;top:0;width:3px;height:100%;background:var(--t3);border-radius:99px;transition:background var(--t)}
+.mc.pendente::before{background:var(--a)}
+.mc.alerta::before{background:var(--r-c)}
+.mc.tomado::before{background:var(--g)}
+.mc.alerta{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.03);animation:slideIn .3s var(--ease) both,glowR 2.5s ease-in-out infinite}
+@keyframes glowR{0%,100%{box-shadow:none}50%{box-shadow:0 0 14px rgba(239,68,68,.12)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+
+.mc-time{font-family:var(--fm);font-size:1rem;font-weight:700;color:var(--t1);min-width:48px}
+.mc-info{flex:1;min-width:0}
+.mc-name{font-size:.9rem;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-meta{font-size:.72rem;color:var(--t3);margin-top:2px}
+.mc-status{font-size:.72rem;font-weight:700;margin-top:3px}
+.mc-status.alerta{color:var(--r-c);animation:blink 1.2s infinite}
+.mc-status.tomado{color:var(--g)}
+.mc-status.pendente{color:var(--a)}
+.mc-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* Foto thumbnail */
+.mc-photo{
+  width:36px;height:36px;border-radius:6px;
+  object-fit:cover;cursor:pointer;border:1.5px solid var(--bdr2);
+  transition:transform var(--t);
+}
+.mc-photo:hover{transform:scale(1.1)}
+
+/* ═══════════════════════════════════
+   PAGE: HISTÓRICO (aba 2)
+═══════════════════════════════════ */
+.chart-wrap{
+  background:var(--bg);border-radius:var(--r);
+  padding:14px;overflow:hidden;
+}
+.chart-canvas{width:100%;height:200px;position:relative;display:flex;align-items:flex-end;gap:6px}
+.chart-bar-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.chart-bar-track{
+  width:100%;flex:1;background:var(--bg3);border-radius:6px;
+  display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;
+  min-height:160px;position:relative;cursor:pointer;
+  transition:opacity var(--t);
+}
+.chart-bar-track:hover{opacity:.85}
+.chart-bar-fill{
+  border-radius:6px;background:linear-gradient(180deg,var(--a),var(--a2));
+  transition:height 1s var(--ease);
+  position:relative;
+}
+.chart-bar-fill::after{
+  content:attr(data-pct);
+  position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+  font-size:.65rem;font-weight:700;font-family:var(--fm);color:var(--a);
+  white-space:nowrap;
+}
+.chart-bar-fill.full{background:linear-gradient(180deg,var(--g),#059669)}
+.chart-bar-fill.zero{background:var(--bg3)}
+.chart-bar-lbl{font-size:.65rem;color:var(--t3);font-weight:600;text-transform:uppercase;font-family:var(--fm);text-align:center}
+
+.hist-card{
+  background:var(--bg);border:1px solid var(--bdr);
+  border-radius:var(--r-sm);padding:13px 15px;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:all var(--t);
+}
+.hist-card:hover{border-color:var(--bdr2);background:var(--surf2)}
+.hist-left{display:flex;flex-direction:column;gap:3px}
+.hist-date{font-size:.85rem;font-weight:700;color:var(--t1)}
+.hist-detail{font-size:.72rem;color:var(--t2)}
+.hist-pct-bar{flex:1;max-width:120px;height:6px;background:var(--bg3);border-radius:99px;overflow:hidden;margin:0 14px}
+.hist-pct-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--p));border-radius:99px}
+.hist-pct-num{font-family:var(--fm);font-size:.85rem;font-weight:700;color:var(--a);min-width:36px;text-align:right}
+
+/* ═══════════════════════════════════
+   PAGE: ESTOQUE (aba 3)
+═══════════════════════════════════ */
+.stock-card{
+  background:var(--bg);border:1.5px solid var(--bdr);
+  border-radius:var(--r);padding:16px;
+  transition:all var(--t);animation:fadeUp .3s var(--ease) both;
+}
+.stock-card:hover{border-color:var(--bdr2);transform:translateY(-2px)}
+.stock-card.low{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.03)}
+.stock-card.critical{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.04);animation:fadeUp .3s var(--ease) both,glowR 2.5s ease-in-out infinite}
+.stock-card.expired{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.06)}
+.stock-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+.stock-name{font-size:.95rem;font-weight:800;color:var(--t1)}
+.stock-type{font-size:.7rem;color:var(--t3);margin-top:2px}
+.stock-qty{text-align:right}
+.stock-qty-num{font-family:var(--fm);font-size:1.5rem;font-weight:700;line-height:1}
+.stock-qty-unit{font-size:.68rem;color:var(--t3)}
+
+.stock-prog{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:10px}
+.stock-prog-fill{height:100%;border-radius:99px;transition:width .8s var(--ease)}
+.stock-prog-fill.ok{background:var(--g)}
+.stock-prog-fill.low{background:var(--w)}
+.stock-prog-fill.critical{background:var(--r-c)}
+
+.stock-dates{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.stock-date-item{
+  display:flex;flex-direction:column;gap:1px;
+  padding:5px 9px;background:var(--bg2);border-radius:7px;border:1px solid var(--bdr);
+  flex:1;min-width:90px;
+}
+.stock-date-lbl{font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.stock-date-val{font-size:.78rem;font-weight:600;color:var(--t1);font-family:var(--fm)}
+
+.stock-actions{display:flex;gap:7px}
+
+/* Lista de compras */
+.shop-item{
+  display:flex;align-items:center;gap:12px;
+  background:var(--bg);border:1px solid var(--bdr);
+  border-radius:var(--r-sm);padding:12px 14px;
+  transition:all var(--t);
+}
+.shop-item.bought{opacity:.5}
+.shop-check{
+  width:20px;height:20px;border-radius:6px;
+  border:2px solid var(--bdr2);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:12px;transition:all var(--t);flex-shrink:0;
+}
+.shop-check.checked{background:var(--g);border-color:var(--g);color:#fff}
+.shop-info{flex:1}
+.shop-name{font-size:.88rem;font-weight:700;color:var(--t1)}
+.shop-detail{font-size:.72rem;color:var(--t2)}
+.shop-urgent{font-size:.68rem;font-weight:700;color:var(--r-c)}
+
+/* ═══════════════════════════════════
+   PAGE: PACIENTES (aba 4)
+═══════════════════════════════════ */
+.patient-card{
+  background:var(--bg);border:1.5px solid var(--bdr);
+  border-radius:var(--r);padding:18px;
+  transition:all var(--t);cursor:pointer;animation:fadeUp .3s var(--ease) both;
+}
+.patient-card:hover{border-color:var(--a);transform:translateY(-2px);box-shadow:0 6px 20px var(--glow)}
+.patient-card.active-patient{border-color:var(--a);background:rgba(59,130,246,.04)}
+.pc-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pc-avatar{
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.pc-info{flex:1}
+.pc-name{font-size:.95rem;font-weight:800;color:var(--t1)}
+.pc-age{font-size:.75rem;color:var(--t2)}
+.pc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pc-stat{
+  background:var(--bg2);border-radius:8px;padding:8px;
+  text-align:center;border:1px solid var(--bdr);
+}
+.pc-stat-val{font-family:var(--fm);font-size:1rem;font-weight:700}
+.pc-stat-lbl{font-size:.62rem;color:var(--t3);font-weight:600}
+.pc-actions{display:flex;gap:7px;margin-top:12px}
+
+/* ═══════════════════════════════════
+   CÂMERA / FOTO
+═══════════════════════════════════ */
+.camera-area{
+  background:var(--bg3);border:2px dashed var(--bdr2);
+  border-radius:var(--r);overflow:hidden;
+  aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:border-color var(--t);position:relative;
+}
+.camera-area:hover{border-color:var(--a)}
+.camera-placeholder{text-align:center;color:var(--t3)}
+.camera-placeholder .cam-ico{font-size:2.5rem;margin-bottom:8px;opacity:.5}
+.camera-placeholder p{font-size:.8rem}
+#cameraPreview,#photoCanvas{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+#capturedImg{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none;border-radius:var(--r)}
+
+/* ═══════════════════════════════════
+   RESPONSIVO
+═══════════════════════════════════ */
+@media(max-width:768px){
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .g4{grid-template-columns:1fr 1fr}
+  .hdr-in{padding:0 12px}
+  .sync-pill{display:none}
+  .main{padding:16px 12px 70px}
+  .panel{padding:16px}
+  .clock-time{font-size:2.2rem}
+  .brand-name{font-size:.95rem}
+}
+@media(max-width:480px){
+  .g3,.g4{grid-template-columns:1fr 1fr}
+  .g2{grid-template-columns:1fr}
+  .tabs-in{gap:0}
+  .tab{padding:0 11px;font-size:.75rem}
+  .mc-actions{flex-direction:column;gap:4px}
+}
+
+/* ═══════════════════════════════════
+   PWA — INSTALL BANNER
+═══════════════════════════════════ */
+#pwa-banner{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:8000;
+  background:var(--surf);border-top:1px solid var(--bdr2);
+  padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+  box-shadow:0 -4px 24px rgba(0,0,0,.35);
+  animation:slideUp .35s var(--ease);
+}
+#pwa-banner.show{display:flex;align-items:center;gap:12px}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.pwa-banner-ico{font-size:2rem;flex-shrink:0}
+.pwa-banner-txt{flex:1}
+.pwa-banner-title{font-size:.9rem;font-weight:800;color:var(--t1)}
+.pwa-banner-sub{font-size:.75rem;color:var(--t2);margin-top:2px}
+.pwa-banner-btns{display:flex;gap:8px;flex-shrink:0}
+
+/* ═══════════════════════════════════
+   PWA — OFFLINE BAR
+═══════════════════════════════════ */
+#offline-bar{
+  display:none;
+  position:fixed;top:60px;left:0;right:0;z-index:7000;
+  background:rgba(245,158,11,.15);border-bottom:1px solid var(--w);
+  padding:7px 18px;text-align:center;
+  font-size:.78rem;color:var(--w);font-weight:600;
+  backdrop-filter:blur(8px);
+}
+#offline-bar.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     SPLASH
+════════════════════════════════ -->
+<div id="splash">
+  <div class="sp-orbit">
+    <div class="sp-ring"></div>
+    <div class="sp-ring"></div>
+    <div class="sp-ring"></div>
+    <div class="sp-core">💊</div>
+  </div>
+  <div class="sp-wordmark">MedTrack</div>
+  <div class="sp-tag">Sistema de Medicação Familiar</div>
+  <div class="sp-track"><div class="sp-fill"></div></div>
+</div>
+
+<!-- ════════════════════════════════
+     APP
+════════════════════════════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-in">
+      <div class="brand">
+        <div class="brand-logo">💊</div>
+        <span class="brand-name">Med<em>Track</em></span>
+      </div>
+
+      <!-- Paciente ativo -->
+      <div class="patient-pill" onclick="openPage('pacientes')">
+        <div class="patient-avatar" id="hdrAvatar">?</div>
+        <span class="patient-pill-name" id="hdrPatientName">Selecionar</span>
+        <span class="patient-pill-arrow">▾</span>
+      </div>
+
+      <div class="hdr-right">
+
+        <button class="ic-btn" onclick="toggleTheme()" title="Tema">
+          <span id="themeIco">☀️</span>
+        </button>
+        <button class="btn-exit" onclick="showModal('logoutModal')">⏻ Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="nav-tabs">
+    <div class="tabs-in">
+      <button class="tab active" data-tab="dashboard" onclick="openPage('dashboard')">
+        🏠 Dashboard
+      </button>
+      <button class="tab" data-tab="historico" onclick="openPage('historico')">
+        📈 Histórico
+      </button>
+      <button class="tab" data-tab="estoque" onclick="openPage('estoque')">
+        📦 Estoque
+        <span class="tab-badge" id="estoque-badge" style="display:none">!</span>
+      </button>
+      <button class="tab" data-tab="compras" onclick="openPage('compras')">
+        🛒 Compras
+      </button>
+      <button class="tab" data-tab="pacientes" onclick="openPage('pacientes')">
+        👥 Pacientes
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══ PAGE: DASHBOARD ══ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Relógio -->
+      <div class="clock-box">
+        <div class="clock-time" id="clockTime">--:--:--</div>
+        <div class="clock-date" id="clockDate">--</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="g4" style="margin-bottom:18px">
+        <div class="stat"><div class="stat-lbl">Total hoje</div><div class="stat-val c-a" id="stTotal">0</div><div class="stat-sub">doses</div></div>
+        <div class="stat"><div class="stat-lbl">Tomados</div><div class="stat-val c-g" id="stTomados">0</div><div class="stat-sub">confirmados</div></div>
+        <div class="stat"><div class="stat-lbl">Pendentes</div><div class="stat-val c-w" id="stPendentes">0</div><div class="stat-sub">aguardando</div></div>
+        <div class="stat"><div class="stat-lbl">Atrasados</div><div class="stat-val c-r" id="stAtrasados">0</div><div class="stat-sub">tomar agora</div></div>
+      </div>
+
+      <div class="g2" style="margin-bottom:18px">
+        <!-- FORMULÁRIO -->
+        <div class="panel">
+          <div class="ph"><div class="pt"><div class="pi">➕</div>Nova Medicação</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+            <div class="fg"><label class="fl">Remédio</label><input id="fNome" class="fi" placeholder="Nome do remédio"></div>
+            <div class="fg">
+              <label class="fl">Tipo</label>
+              <select id="fTipo" class="fi">
+                <option value="comprimido">💊 Comprimido</option>
+                <option value="liquido">🧪 Líquido (ml)</option>
+                <option value="capsula">💉 Cápsula</option>
+                <option value="gotas">💧 Gotas</option>
+                <option value="outro">📦 Outro</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">Dose</label><input id="fDose" class="fi" placeholder="Ex: 500mg / 10ml"></div>
+            <div class="fg"><label class="fl">Vezes ao dia</label><input id="fQtd" type="number" class="fi" placeholder="3" min="1" max="24"></div>
+            <div class="fg"><label class="fl">Intervalo (h)</label><input id="fIntervalo" type="number" class="fi" placeholder="8" min="1" max="24"></div>
+            <div class="fg"><label class="fl">Início</label><input id="fInicio" type="time" class="fi"></div>
+            <div class="fg" style="grid-column:1/-1">
+              <div style="display:flex;gap:9px">
+                <button class="btn btn-s" style="flex:1" onclick="gerarHorarios()">👁 Prévia</button>
+                <button class="btn btn-p" style="flex:1" onclick="salvarMed()">💾 Salvar</button>
+              </div>
+            </div>
+          </div>
+          <div id="preview" style="display:none;margin-top:14px">
+            <div style="font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px">Horários gerados</div>
+            <div id="previewChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- Próxima dose -->
+          <div class="panel" style="padding:16px">
+            <div class="pt" style="margin-bottom:12px"><div class="pi">⏰</div>Próxima dose</div>
+            <div id="nextDose" class="next-dose">
+              <div class="next-ico">💤</div>
+              <div class="next-info"><strong>Sem pendências</strong><span>Todas tomadas</span></div>
+            </div>
+          </div>
+          <!-- Progresso -->
+          <div class="panel" style="padding:16px;flex:1">
+            <div class="pt" style="margin-bottom:12px"><div class="pi">📊</div>Adesão hoje</div>
+            <div class="prog-row"><span class="prog-lbl">Tratamento</span><span class="prog-pct" id="progPct">0%</span></div>
+            <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+            <div style="font-size:.72rem;color:var(--t3);line-height:1.55">
+              Dados salvos localmente no dispositivo.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista -->
+      <div class="panel">
+        <div class="ph">
+          <div class="pt"><div class="pi">📋</div>Medicações — <span id="listPatientName" style="color:var(--a)">todos</span></div>
+          <button class="btn btn-s btn-sm" style="visibility:hidden">🔄</button>
+        </div>
+        <div class="filter-row">
+          <button class="fb on" data-f="todos" onclick="setFilter('todos',this)">Todos</button>
+          <button class="fb" data-f="pendente" onclick="setFilter('pendente',this)">Pendentes</button>
+          <button class="fb" data-f="alerta" onclick="setFilter('alerta',this)">Atrasados</button>
+          <button class="fb" data-f="tomado" onclick="setFilter('tomado',this)">Tomados</button>
+        </div>
+        <div class="med-list" id="medList">
+          <div class="empty"><div class="empty-ico">💊</div><p>Nenhuma medicação.<br>Cadastre acima.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: HISTÓRICO ══ -->
+    <div class="page" id="page-historico">
+      <div class="g2" style="margin-bottom:18px">
+        <div class="panel">
+          <div class="ph"><div class="pt"><div class="pi">📈</div>Aderência — 7 dias</div></div>
+          <div class="chart-wrap">
+            <div class="chart-canvas" id="chartCanvas"></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:3px;background:linear-gradient(var(--a),var(--a2))"></div><span style="font-size:.72rem;color:var(--t2)">Parcial</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:3px;background:var(--g)"></div><span style="font-size:.72rem;color:var(--t2)">100%</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:3px;background:var(--bg3)"></div><span style="font-size:.72rem;color:var(--t2)">Sem dados</span></div>
+          </div>
+        </div>
+
+        <!-- Resumo semanal -->
+        <div class="panel">
+          <div class="ph"><div class="pt"><div class="pi">🏆</div>Resumo da semana</div></div>
+          <div id="weekSummary" style="display:flex;flex-direction:column;gap:8px">
+            <div class="empty"><div class="empty-ico">📊</div><p>Sem dados históricos ainda.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histórico por paciente -->
+      <div class="panel">
+        <div class="ph">
+          <div class="pt"><div class="pi">👤</div>Por paciente</div>
+          <select id="histPatFilter" class="fi" style="width:auto;height:34px;padding:0 10px" onchange="renderHistorico()">
+            <option value="todos">Todos</option>
+          </select>
+        </div>
+        <div id="histList" style="display:flex;flex-direction:column;gap:8px">
+          <div class="empty"><div class="empty-ico">📋</div><p>Nenhum histórico disponível.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ESTOQUE ══ -->
+    <div class="page" id="page-estoque">
+      <div class="ph" style="margin-bottom:16px">
+        <div class="pt" style="font-size:1rem">📦 Controle de Estoque</div>
+        <button class="btn btn-p btn-sm" onclick="showModal('addStockModal')">+ Novo item</button>
+      </div>
+
+      <!-- Alertas de estoque -->
+      <div id="stockAlerts" style="margin-bottom:16px"></div>
+
+      <!-- Grid de estoque -->
+      <div class="g3" id="stockGrid">
+        <div class="empty" style="grid-column:1/-1"><div class="empty-ico">📦</div><p>Nenhum item no estoque.</p></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: COMPRAS ══ -->
+    <div class="page" id="page-compras">
+      <div class="ph" style="margin-bottom:16px">
+        <div class="pt" style="font-size:1rem">🛒 Lista de Compras</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-s btn-sm" onclick="limparComprados()">🗑 Limpar comprados</button>
+          <button class="btn btn-p btn-sm" onclick="showModal('addShopModal')">+ Adicionar</button>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-bottom:16px">
+        <div class="stat"><div class="stat-lbl">Itens na lista</div><div class="stat-val c-a" id="shopTotal">0</div></div>
+        <div class="stat"><div class="stat-lbl">Urgentes</div><div class="stat-val c-r" id="shopUrgent">0</div></div>
+      </div>
+
+      <div class="panel">
+        <div id="shopList" style="display:flex;flex-direction:column;gap:8px">
+          <div class="empty"><div class="empty-ico">🛒</div><p>Lista vazia.<br>Adicione itens para comprar.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: PACIENTES ══ -->
+    <div class="page" id="page-pacientes">
+      <div class="ph" style="margin-bottom:16px">
+        <div class="pt" style="font-size:1rem">👥 Perfis de Pacientes</div>
+        <button class="btn btn-p btn-sm" onclick="showModal('addPatientModal')">+ Novo paciente</button>
+      </div>
+
+      <div class="g3" id="patientGrid">
+        <div class="empty" style="grid-column:1/-1"><div class="empty-ico">👥</div><p>Nenhum paciente.<br>Adicione o primeiro perfil.</p></div>
+      </div>
+
+      <!-- BACKUP / RESTAURAR -->
+      <div class="panel" style="margin-top:24px;padding:20px">
+        <div class="pt" style="margin-bottom:16px"><div class="pi">💾</div>Backup &amp; Restaurar</div>
+        <p style="font-size:.8rem;color:var(--t3);margin-bottom:16px;line-height:1.6">
+          Exporte todos os dados para um arquivo <strong>.json</strong> e restaure quando precisar.
+          A importação <strong>substitui</strong> todos os dados atuais.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-p btn-sm" onclick="exportarBackup()">⬇️ Exportar JSON</button>
+          <button class="btn btn-s btn-sm" onclick="document.getElementById('importFileInput').click()">⬆️ Importar JSON</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importarBackup(event)">
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ════════════════════════════════
+     PWA — OFFLINE BAR
+════════════════════════════════ -->
+<div id="offline-bar">📡 Você está offline — os dados salvos continuam disponíveis</div>
+
+<!-- ════════════════════════════════
+     PWA — INSTALL BANNER
+════════════════════════════════ -->
+<div id="pwa-banner">
+  <div class="pwa-banner-ico">💊</div>
+  <div class="pwa-banner-txt">
+    <div class="pwa-banner-title">Instalar MedTrack</div>
+    <div class="pwa-banner-sub">Adicionar à tela inicial para acesso rápido</div>
+  </div>
+  <div class="pwa-banner-btns">
+    <button class="btn btn-s btn-sm" id="pwa-dismiss">Agora não</button>
+    <button class="btn btn-p btn-sm" id="pwa-install">📲 Instalar</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     TOAST
+════════════════════════════════ -->
+<div class="tc" id="tc"></div>
+
+<!-- ════════════════════════════════
+     MODAIS
+════════════════════════════════ -->
+
+<!-- LOGOUT -->
+<div class="overlay" id="logoutModal">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:12px">⏻</div>
+    <div style="font-size:1.1rem;font-weight:800;margin-bottom:8px">Sair do sistema?</div>
+    <div style="font-size:.85rem;color:var(--t2);margin-bottom:22px">Dados sincronizados com Google Sheets.</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-s" style="min-width:100px" onclick="hideModal('logoutModal')">Cancelar</button>
+      <button class="btn btn-p" style="min-width:100px" onclick="logout()">Sair agora</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADICIONAR PACIENTE -->
+<div class="overlay" id="addPatientModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">👤 Novo Paciente</div>
+      <button class="close-btn" onclick="hideModal('addPatientModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome completo</label><input id="pNome" class="fi" placeholder="Nome do paciente"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        <div class="fg"><label class="fl">Idade</label><input id="pIdade" type="number" class="fi" placeholder="Ex: 45" min="0" max="130"></div>
+        <div class="fg">
+          <label class="fl">Cor do avatar</label>
+          <select id="pCor" class="fi">
+            <option value="linear-gradient(135deg,#3b82f6,#6366f1)">🔵 Azul</option>
+            <option value="linear-gradient(135deg,#10b981,#059669)">🟢 Verde</option>
+            <option value="linear-gradient(135deg,#ec4899,#db2777)">🩷 Rosa</option>
+            <option value="linear-gradient(135deg,#f59e0b,#d97706)">🟡 Amarelo</option>
+            <option value="linear-gradient(135deg,#8b5cf6,#6d28d9)">🟣 Roxo</option>
+            <option value="linear-gradient(135deg,#ef4444,#dc2626)">🔴 Vermelho</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Observação</label><textarea id="pObs" class="fi" placeholder="Alergias, condições, etc."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-s" onclick="hideModal('addPatientModal')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarPaciente()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDITAR PACIENTE -->
+<div class="overlay" id="editPatientModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">✏️ Editar Paciente</div>
+      <button class="close-btn" onclick="hideModal('editPatientModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="epId">
+      <div class="fg"><label class="fl">Nome completo</label><input id="epNome" class="fi"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        <div class="fg"><label class="fl">Idade</label><input id="epIdade" type="number" class="fi" min="0" max="130"></div>
+        <div class="fg">
+          <label class="fl">Cor do avatar</label>
+          <select id="epCor" class="fi">
+            <option value="linear-gradient(135deg,#3b82f6,#6366f1)">🔵 Azul</option>
+            <option value="linear-gradient(135deg,#10b981,#059669)">🟢 Verde</option>
+            <option value="linear-gradient(135deg,#ec4899,#db2777)">🩷 Rosa</option>
+            <option value="linear-gradient(135deg,#f59e0b,#d97706)">🟡 Amarelo</option>
+            <option value="linear-gradient(135deg,#8b5cf6,#6d28d9)">🟣 Roxo</option>
+            <option value="linear-gradient(135deg,#ef4444,#dc2626)">🔴 Vermelho</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Observação</label><textarea id="epObs" class="fi"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-s" onclick="hideModal('editPatientModal')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarEdicaoPaciente()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADICIONAR ESTOQUE -->
+<div class="overlay" id="addStockModal">
+  <div class="modal wide">
+    <div class="modal-hdr">
+      <div class="modal-title">📦 Novo Item no Estoque</div>
+      <button class="close-btn" onclick="hideModal('addStockModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        <div class="fg" style="grid-column:1/-1"><label class="fl">Nome do remédio</label><input id="sNome" class="fi" placeholder="Ex: Paracetamol 500mg"></div>
+        <div class="fg">
+          <label class="fl">Tipo</label>
+          <select id="sTipo" class="fi">
+            <option value="comprimido">💊 Comprimido</option>
+            <option value="liquido">🧪 Líquido (ml)</option>
+            <option value="capsula">💉 Cápsula</option>
+            <option value="gotas">💧 Gotas</option>
+            <option value="frasco">🫙 Frasco</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Quantidade em estoque</label><input id="sQtd" type="number" class="fi" placeholder="Ex: 30" min="0"></div>
+        <div class="fg"><label class="fl">Qtd. mínima (alerta)</label><input id="sMin" type="number" class="fi" placeholder="Ex: 5" min="0"></div>
+        <div class="fg"><label class="fl">Qtd. máxima (referência)</label><input id="sMax" type="number" class="fi" placeholder="Ex: 30" min="1"></div>
+        <div class="fg"><label class="fl">Data de Fabricação</label><input id="sFab" type="date" class="fi"></div>
+        <div class="fg"><label class="fl">Data de Validade</label><input id="sVal" type="date" class="fi"></div>
+        <div class="fg"><label class="fl">Dosagem</label><input id="sDosagem" class="fi" placeholder="Ex: 500mg / 5ml"></div>
+        <div class="fg" style="grid-column:1/-1"><label class="fl">Observações</label><textarea id="sObs" class="fi" placeholder="Onde guardar, temperatura, etc."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-s" onclick="hideModal('addStockModal')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarEstoque()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADICIONAR COMPRA -->
+<div class="overlay" id="addShopModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">🛒 Adicionar à Lista</div>
+      <button class="close-btn" onclick="hideModal('addShopModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="fl">Nome do remédio</label><input id="shNome" class="fi" placeholder="Ex: Losartana 50mg"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        <div class="fg"><label class="fl">Quantidade</label><input id="shQtd" type="number" class="fi" placeholder="Ex: 2 caixas" min="1"></div>
+        <div class="fg">
+          <label class="fl">Urgência</label>
+          <select id="shUrg" class="fi">
+            <option value="normal">🟡 Normal</option>
+            <option value="urgente">🔴 Urgente</option>
+            <option value="baixo">🟢 Sem pressa</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Para uso futuro — data prevista</label><input id="shData" type="date" class="fi"></div>
+      <div class="fg"><label class="fl">Obs. (farmácia, genérico, etc.)</label><textarea id="shObs" class="fi" placeholder="Detalhes adicionais..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-s" onclick="hideModal('addShopModal')">Cancelar</button>
+      <button class="btn btn-p" onclick="salvarCompra()">➕ Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMAR FOTO -->
+<div class="overlay" id="photoModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">📸 Confirmação com Foto</div>
+      <button class="close-btn" onclick="closePhotoModal()">✕</button>
+    </div>
+    <input type="hidden" id="photoMedId">
+    <div class="modal-body">
+      <div style="font-size:.82rem;color:var(--t2);margin-bottom:4px">
+        Tire uma foto do comprimido/remédio como prova de tomada.
+      </div>
+      <div class="camera-area" id="cameraArea" onclick="triggerCamera()">
+        <div class="camera-placeholder" id="camPlaceholder">
+          <div class="cam-ico">📷</div>
+          <p>Toque para abrir câmera<br>ou selecionar imagem</p>
+        </div>
+        <video id="cameraPreview" autoplay playsinline style="display:none"></video>
+        <canvas id="photoCanvas" style="display:none"></canvas>
+        <img id="capturedImg" alt="foto capturada">
+      </div>
+      <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="onFileSelected(event)">
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-s btn-sm" style="flex:1" onclick="startCamera()">📷 Câmera</button>
+        <button class="btn btn-s btn-sm" style="flex:1" onclick="document.getElementById('fileInput').click()">🖼 Galeria</button>
+        <button class="btn btn-s btn-sm" id="captureBtn" style="display:none;flex:1" onclick="capturePhoto()">⚡ Capturar</button>
+        <button class="btn btn-s btn-sm" id="retakeBtn" style="display:none;flex:1" onclick="retakePhoto()">🔄 Repetir</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-s" onclick="closePhotoModal()">Cancelar</button>
+      <button class="btn btn-g" onclick="confirmarComFoto()">✅ Confirmar tomada</button>
+    </div>
+  </div>
+</div>
+
+<!-- VISUALIZAR FOTO -->
+<div class="overlay" id="viewPhotoModal">
+  <div class="modal" style="text-align:center">
+    <div class="modal-hdr">
+      <div class="modal-title">📸 Foto da tomada</div>
+      <button class="close-btn" onclick="hideModal('viewPhotoModal')">✕</button>
+    </div>
+    <img id="viewPhotoImg" style="width:100%;border-radius:var(--r);margin-bottom:12px;max-height:350px;object-fit:cover" src="" alt="prova">
+    <div id="viewPhotoMeta" style="font-size:.78rem;color:var(--t2)"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════
+// Armazenamento local — sem sincronização remota
+
+// ══════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════
+let state = {
+  pacientes:    JSON.parse(localStorage.getItem("mt_pacientes"))    || [],
+  medicacoes:   JSON.parse(localStorage.getItem("mt_medicacoes"))   || [],
+  estoque:      JSON.parse(localStorage.getItem("mt_estoque"))      || [],
+  compras:      JSON.parse(localStorage.getItem("mt_compras"))      || [],
+  historico:    JSON.parse(localStorage.getItem("mt_historico"))    || {},
+  pacienteAtivo: localStorage.getItem("mt_pacAtivo") || null,
+  filtro: "todos",
+  alarmeAtivo: false,
+  alarmeInterval: null,
+  cameraStream: null,
+  capturedPhotoData: null,
+};
+
+// ══════════════════════════════════════════════
+// SPLASH
+// ══════════════════════════════════════════════
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    document.getElementById("splash").classList.add("out");
+    const app = document.getElementById("app");
+    app.classList.add("on");
+    initApp();
+  }, 2600);
+});
+
+function initApp() {
+  startClock();
+  checkConnection();
+  renderAll();
+  setInterval(() => { renderAll(); }, 30000);
+  // Tema salvo
+  const tema = localStorage.getItem("mt_tema") || "dark";
+  document.documentElement.setAttribute("data-theme", tema);
+  document.getElementById("themeIco").textContent = tema === "dark" ? "☀️" : "🌙";
+}
+
+// ══════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════
+function startClock() {
+  const tick = () => {
+    const n = new Date();
+    document.getElementById("clockTime").textContent = n.toLocaleTimeString("pt-BR",{hour12:false});
+    document.getElementById("clockDate").textContent = n.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+// ══════════════════════════════════════════════
+// TEMA
+// ══════════════════════════════════════════════
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  const novo = dark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", novo);
+  document.getElementById("themeIco").textContent = dark ? "🌙" : "☀️";
+  localStorage.setItem("mt_tema", novo);
+}
+
+// ══════════════════════════════════════════════
+// CONEXÃO
+// ══════════════════════════════════════════════
+function checkConnection() {
+  // Modo local — sem sincronização remota
+}
+
+function setSyncing(v) {
+  // Modo local — sem sincronização remota
+}
+
+// ══════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════
+function openPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === name);
+  });
+  const p = document.getElementById("page-"+name);
+  if(p) p.classList.add("active");
+  if(name==="historico")   { buildChart(); renderHistorico(); }
+  if(name==="estoque")     renderEstoque();
+  if(name==="compras")     renderCompras();
+  if(name==="pacientes")   renderPacientes();
+  if(name==="dashboard")   renderDashboard();
+}
+
+// ══════════════════════════════════════════════
+// SAVE / LOAD
+// ══════════════════════════════════════════════
+function save() {
+  localStorage.setItem("mt_pacientes",  JSON.stringify(state.pacientes));
+  localStorage.setItem("mt_medicacoes", JSON.stringify(state.medicacoes));
+  localStorage.setItem("mt_estoque",    JSON.stringify(state.estoque));
+  localStorage.setItem("mt_compras",    JSON.stringify(state.compras));
+  localStorage.setItem("mt_historico",  JSON.stringify(state.historico));
+  localStorage.setItem("mt_pacAtivo",   state.pacienteAtivo || "");
+}
+
+function renderAll() {
+  renderDashboard();
+  renderEstoque();
+  renderCompras();
+  renderPacientes();
+  buildChart();
+  renderHistorico();
+  atualizarHdrPaciente();
+}
+
+// ══════════════════════════════════════════════
+// PACIENTES
+// ══════════════════════════════════════════════
+function salvarPaciente() {
+  const nome  = document.getElementById("pNome").value.trim();
+  const idade = document.getElementById("pIdade").value;
+  const cor   = document.getElementById("pCor").value;
+  const obs   = document.getElementById("pObs").value.trim();
+  if(!nome){ toast("Informe o nome do paciente","warn"); return; }
+  const p = { id: Date.now(), nome, idade: parseInt(idade)||0, cor, obs, criado: new Date().toISOString() };
+  state.pacientes.push(p);
+  if(!state.pacienteAtivo) state.pacienteAtivo = p.id;
+  save();
+  renderPacientes();
+  atualizarHdrPaciente();
+  hideModal("addPatientModal");
+  ["pNome","pIdade","pObs"].forEach(id => document.getElementById(id).value="");
+  toast(`Paciente ${nome} adicionado!`, "success");
+  // Atualiza select de histórico
+  atualizarSelectHistorico();
+  syncToSheet();
+}
+
+function renderPacientes() {
+  const grid = document.getElementById("patientGrid");
+  if(!state.pacientes.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-ico">👥</div><p>Nenhum paciente.<br>Adicione o primeiro perfil.</p></div>`;
+    return;
+  }
+  const hoje = new Date().toDateString();
+  grid.innerHTML = state.pacientes.map((p,i) => {
+    const meds = state.medicacoes.filter(m => m.pacienteId === p.id && m.data === hoje);
+    const tomados = meds.filter(m => m.tomado).length;
+    const estoque = state.estoque.filter(e => e.pacienteId === p.id || !e.pacienteId).length;
+    const isAtivo = String(state.pacienteAtivo) === String(p.id);
+    return `
+    <div class="patient-card ${isAtivo?'active-patient':''}" style="animation-delay:${i*.05}s">
+      <div class="pc-top">
+        <div class="pc-avatar" style="background:${p.cor}">${p.nome.charAt(0).toUpperCase()}</div>
+        <div class="pc-info">
+          <div class="pc-name">${p.nome}</div>
+          <div class="pc-age">${p.idade ? p.idade+" anos" : "Idade não informada"}${p.obs?` · ${p.obs.slice(0,30)}...`:""}</div>
+        </div>
+        ${isAtivo ? '<span class="badge badge-a">Ativo</span>' : ''}
+      </div>
+      <div class="pc-stats">
+        <div class="pc-stat"><div class="pc-stat-val c-a">${meds.length}</div><div class="pc-stat-lbl">Doses hoje</div></div>
+        <div class="pc-stat"><div class="pc-stat-val c-g">${tomados}</div><div class="pc-stat-lbl">Tomados</div></div>
+        <div class="pc-stat"><div class="pc-stat-val c-p">${estoque}</div><div class="pc-stat-lbl">Estoque</div></div>
+      </div>
+      <div class="pc-actions">
+        <button class="btn btn-p btn-sm" style="flex:1" onclick="selecionarPaciente(${p.id})">
+          ${isAtivo ? '✓ Selecionado' : '▶ Selecionar'}
+        </button>
+        <button class="btn btn-s btn-sm" onclick="editarPaciente(${p.id})">✏️</button>
+        <button class="btn btn-r btn-sm" onclick="excluirPaciente(${p.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function selecionarPaciente(id) {
+  state.pacienteAtivo = id;
+  save();
+  renderPacientes();
+  atualizarHdrPaciente();
+  renderDashboard();
+  toast("Paciente selecionado","info");
+}
+
+function atualizarHdrPaciente() {
+  const p = state.pacientes.find(p => String(p.id) === String(state.pacienteAtivo));
+  const nameEl = document.getElementById("hdrPatientName");
+  const avatarEl = document.getElementById("hdrAvatar");
+  const listEl = document.getElementById("listPatientName");
+  if(p){
+    nameEl.textContent = p.nome;
+    avatarEl.textContent = p.nome.charAt(0).toUpperCase();
+    avatarEl.style.background = p.cor;
+    if(listEl) listEl.textContent = p.nome;
+  } else {
+    nameEl.textContent = "Selecionar";
+    avatarEl.textContent = "?";
+    avatarEl.style.background = "";
+    if(listEl) listEl.textContent = "todos";
+  }
+}
+
+function editarPaciente(id) {
+  const p = state.pacientes.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById("epId").value = id;
+  document.getElementById("epNome").value = p.nome;
+  document.getElementById("epIdade").value = p.idade;
+  document.getElementById("epCor").value = p.cor;
+  document.getElementById("epObs").value = p.obs;
+  showModal("editPatientModal");
+}
+
+function salvarEdicaoPaciente() {
+  const id = parseInt(document.getElementById("epId").value);
+  const idx = state.pacientes.findIndex(x => x.id === id);
+  if(idx === -1) return;
+  state.pacientes[idx].nome  = document.getElementById("epNome").value.trim();
+  state.pacientes[idx].idade = parseInt(document.getElementById("epIdade").value)||0;
+  state.pacientes[idx].cor   = document.getElementById("epCor").value;
+  state.pacientes[idx].obs   = document.getElementById("epObs").value.trim();
+  save(); renderPacientes(); atualizarHdrPaciente();
+  hideModal("editPatientModal");
+  toast("Paciente atualizado","success");
+  syncToSheet();
+}
+
+function excluirPaciente(id) {
+  if(!confirm("Excluir paciente e todas suas medicações?")) return;
+  state.pacientes = state.pacientes.filter(p => p.id !== id);
+  state.medicacoes = state.medicacoes.filter(m => m.pacienteId !== id);
+  if(String(state.pacienteAtivo) === String(id)){
+    state.pacienteAtivo = state.pacientes[0]?.id || null;
+  }
+  save(); renderAll(); toast("Paciente removido","info");
+}
+
+// ══════════════════════════════════════════════
+// MEDICAÇÕES
+// ══════════════════════════════════════════════
+let tempHorarios = [];
+
+function gerarHorarios() {
+  tempHorarios = [];
+  const nome = document.getElementById("fNome").value.trim();
+  const tipo = document.getElementById("fTipo").value;
+  const dose = document.getElementById("fDose").value.trim();
+  const qtd  = parseInt(document.getElementById("fQtd").value);
+  const intv = parseInt(document.getElementById("fIntervalo").value);
+  const ini  = document.getElementById("fInicio").value;
+  if(!nome||!qtd||!intv||!ini){ toast("Preencha todos os campos","warn"); return; }
+  const [h,m] = ini.split(":").map(Number);
+  for(let i=0;i<qtd;i++){
+    const hr = (h+intv*i)%24;
+    const horario = String(hr).padStart(2,"0")+":"+String(m).padStart(2,"0");
+    tempHorarios.push({ id: Date.now()+i, nome, tipo, dose, hora: horario,
+      tomado: false, data: new Date().toDateString(),
+      pacienteId: state.pacienteAtivo, foto: null,
+      fotoTimestamp: null });
+  }
+  // Preview
+  document.getElementById("preview").style.display = "block";
+  document.getElementById("previewChips").innerHTML = tempHorarios.map((r,i) =>
+    `<div style="padding:5px 12px;border-radius:99px;background:var(--bg3);border:1px solid var(--bdr);font-family:var(--fm);font-size:.8rem;color:var(--a);font-weight:600;animation:fadeUp .2s var(--ease) ${i*.04}s both">${r.hora}</div>`
+  ).join("");
+  toast(`${qtd} horário(s) gerado(s)`,"info");
+}
+
+function salvarMed() {
+  if(!tempHorarios.length){ toast("Gere os horários primeiro","warn"); return; }
+  if(!state.pacienteAtivo){ toast("Selecione um paciente primeiro","warn"); openPage("pacientes"); return; }
+  state.medicacoes.push(...tempHorarios);
+  registrarHistorico();
+  save(); syncToSheet(); renderDashboard();
+  ["fNome","fDose","fQtd","fIntervalo","fInicio"].forEach(id => document.getElementById(id).value="");
+  document.getElementById("preview").style.display="none";
+  tempHorarios=[];
+  toast("Medicação salva!","success");
+}
+
+function getStatus(r) {
+  if(r.tomado) return "tomado";
+  const n = new Date();
+  const ha = n.getHours().toString().padStart(2,"0")+":"+n.getMinutes().toString().padStart(2,"0");
+  return ha >= r.hora ? "alerta" : "pendente";
+}
+
+function setFilter(f, btn) {
+  state.filtro = f;
+  document.querySelectorAll(".fb").forEach(b => b.classList.remove("on"));
+  btn.classList.add("on");
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const hoje = new Date().toDateString();
+  const pac = state.pacienteAtivo;
+  const todas = state.medicacoes.filter(m => m.data === hoje);
+  const mine  = pac ? todas.filter(m => String(m.pacienteId) === String(pac)) : todas;
+
+  // Stats
+  const total    = mine.length;
+  const tomados  = mine.filter(m => m.tomado).length;
+  const pendentes= mine.filter(m => getStatus(m)==="pendente").length;
+  const atrasados= mine.filter(m => getStatus(m)==="alerta").length;
+  document.getElementById("stTotal").textContent    = total;
+  document.getElementById("stTomados").textContent  = tomados;
+  document.getElementById("stPendentes").textContent= pendentes;
+  document.getElementById("stAtrasados").textContent= atrasados;
+
+  // Progresso
+  const pct = total>0 ? Math.round(tomados/total*100) : 0;
+  document.getElementById("progPct").textContent = pct+"%";
+  document.getElementById("progFill").style.width = pct+"%";
+
+  // Próxima dose
+  const prox = mine.filter(m=>!m.tomado).sort((a,b)=>a.hora.localeCompare(b.hora))[0];
+  document.getElementById("nextDose").innerHTML = prox
+    ? `<div class="next-ico">💊</div><div class="next-info"><strong>${prox.nome}</strong><span>${prox.dose||""} · às ${prox.hora}</span></div>`
+    : `<div class="next-ico">✅</div><div class="next-info"><strong>Tudo em dia!</strong><span>Todas as doses tomadas</span></div>`;
+
+  // Lista
+  let lista = mine;
+  if(state.filtro !== "todos") lista = mine.filter(m => getStatus(m) === state.filtro);
+  lista = [...lista].sort((a,b)=>a.hora.localeCompare(b.hora));
+
+  const el = document.getElementById("medList");
+  if(!lista.length){
+    el.innerHTML = `<div class="empty"><div class="empty-ico">💊</div><p>Nenhuma dose encontrada.</p></div>`; return;
+  }
+
+  let alarme = false;
+  el.innerHTML = "";
+
+  lista.forEach((r,i) => {
+    const st = getStatus(r);
+    if(st==="alerta") alarme = true;
+    const tipoIco = {comprimido:"💊",liquido:"🧪",capsula:"💉",gotas:"💧",outro:"📦"}[r.tipo]||"💊";
+    const card = document.createElement("div");
+    card.className = `mc ${st}`;
+    card.style.animationDelay = `${i*.04}s`;
+    card.innerHTML = `
+      <div class="mc-time">${r.hora}</div>
+      <div class="mc-info">
+        <div class="mc-name">${tipoIco} ${r.nome}</div>
+        <div class="mc-meta">${r.dose||""} · ${r.tipo||"comprimido"}</div>
+        <div class="mc-status ${st}">
+          ${st==="tomado"?"✅ Tomado":st==="alerta"?"⚠️ TOMAR AGORA!":"⏳ Aguardando"}
+          ${r.fotoTimestamp ? `· 📸 ${new Date(r.fotoTimestamp).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}` : ""}
+        </div>
+      </div>
+      <div class="mc-actions">
+        ${r.foto ? `<img class="mc-photo" src="${r.foto}" onclick="viewPhoto(${r.id})" title="Ver foto">` : ""}
+        ${!r.tomado ? `
+          <button class="btn btn-sm" style="background:var(--a);color:#fff;font-size:.72rem" onclick="abrirFoto(${r.id})">📸</button>
+          <button class="btn btn-sm" style="background:var(--g);color:#fff;font-size:.72rem" onclick="marcar(${r.id})">✓</button>
+        ` : ""}
+        <button class="btn btn-r btn-xs" onclick="excluirMed(${r.id})">✕</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+
+  if(alarme && !state.alarmeAtivo) startAlarme();
+  if(!alarme && state.alarmeAtivo) stopAlarme();
+
+  // Badge atrasados na tab
+  // (usamos em estoque também)
+  atualizarBadgeEstoque();
+}
+
+function marcar(id) {
+  const idx = state.medicacoes.findIndex(m => m.id === id);
+  if(idx===-1) return;
+  state.medicacoes[idx].tomado = true;
+  registrarHistorico();
+  save(); syncToSheet(); renderDashboard();
+  toast(`${state.medicacoes[idx].nome} marcado como tomado ✅`,"success");
+}
+
+function excluirMed(id) {
+  state.medicacoes = state.medicacoes.filter(m => m.id !== id);
+  save(); renderDashboard();
+  toast("Medicação removida","info");
+}
+
+// ══════════════════════════════════════════════
+// CÂMERA / FOTO
+// ══════════════════════════════════════════════
+function abrirFoto(medId) {
+  document.getElementById("photoMedId").value = medId;
+  state.capturedPhotoData = null;
+  document.getElementById("capturedImg").style.display = "none";
+  document.getElementById("capturedImg").src = "";
+  document.getElementById("camPlaceholder").style.display = "flex";
+  document.getElementById("captureBtn").style.display = "none";
+  document.getElementById("retakeBtn").style.display = "none";
+  if(state.cameraStream){ state.cameraStream.getTracks().forEach(t=>t.stop()); state.cameraStream=null; }
+  document.getElementById("cameraPreview").style.display = "none";
+  showModal("photoModal");
+}
+
+function triggerCamera() {
+  if(!state.capturedPhotoData) startCamera();
+}
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    state.cameraStream = stream;
+    const vid = document.getElementById("cameraPreview");
+    vid.srcObject = stream;
+    vid.style.display = "block";
+    document.getElementById("camPlaceholder").style.display = "none";
+    document.getElementById("captureBtn").style.display = "flex";
+  } catch {
+    // fallback para input file
+    document.getElementById("fileInput").click();
+  }
+}
+
+function capturePhoto() {
+  const vid = document.getElementById("cameraPreview");
+  const canvas = document.getElementById("photoCanvas");
+  canvas.width = vid.videoWidth; canvas.height = vid.videoHeight;
+  canvas.getContext("2d").drawImage(vid,0,0);
+  state.capturedPhotoData = canvas.toDataURL("image/jpeg", 0.7);
+  const img = document.getElementById("capturedImg");
+  img.src = state.capturedPhotoData;
+  img.style.display = "block";
+  vid.style.display = "none";
+  if(state.cameraStream){ state.cameraStream.getTracks().forEach(t=>t.stop()); state.cameraStream=null; }
+  document.getElementById("captureBtn").style.display = "none";
+  document.getElementById("retakeBtn").style.display = "flex";
+  toast("Foto capturada!","success");
+}
+
+function onFileSelected(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    state.capturedPhotoData = ev.target.result;
+    const img = document.getElementById("capturedImg");
+    img.src = state.capturedPhotoData;
+    img.style.display = "block";
+    document.getElementById("camPlaceholder").style.display = "none";
+    document.getElementById("cameraPreview").style.display = "none";
+    document.getElementById("retakeBtn").style.display = "flex";
+    document.getElementById("captureBtn").style.display = "none";
+    toast("Imagem carregada!","info");
+  };
+  reader.readAsDataURL(file);
+}
+
+function retakePhoto() {
+  state.capturedPhotoData = null;
+  document.getElementById("capturedImg").style.display = "none";
+  document.getElementById("retakeBtn").style.display = "none";
+  document.getElementById("camPlaceholder").style.display = "flex";
+  startCamera();
+}
+
+function closePhotoModal() {
+  if(state.cameraStream){ state.cameraStream.getTracks().forEach(t=>t.stop()); state.cameraStream=null; }
+  hideModal("photoModal");
+}
+
+function confirmarComFoto() {
+  const medId = parseInt(document.getElementById("photoMedId").value);
+  const idx = state.medicacoes.findIndex(m => m.id === medId);
+  if(idx===-1) return;
+  state.medicacoes[idx].tomado = true;
+  state.medicacoes[idx].foto = state.capturedPhotoData || null;
+  state.medicacoes[idx].fotoTimestamp = new Date().toISOString();
+  registrarHistorico();
+  save(); syncToSheet(); renderDashboard();
+  closePhotoModal();
+  toast(state.capturedPhotoData ? "Tomada confirmada com foto 📸" : "Tomada confirmada ✅","success");
+}
+
+function viewPhoto(id) {
+  const m = state.medicacoes.find(x => x.id === id);
+  if(!m||!m.foto) return;
+  document.getElementById("viewPhotoImg").src = m.foto;
+  document.getElementById("viewPhotoMeta").textContent =
+    `${m.nome} · ${m.hora} · ${m.fotoTimestamp ? new Date(m.fotoTimestamp).toLocaleString("pt-BR") : ""}`;
+  showModal("viewPhotoModal");
+}
+
+// ══════════════════════════════════════════════
+// ESTOQUE
+// ══════════════════════════════════════════════
+function salvarEstoque() {
+  const nome  = document.getElementById("sNome").value.trim();
+  const tipo  = document.getElementById("sTipo").value;
+  const qtd   = parseInt(document.getElementById("sQtd").value)||0;
+  const min   = parseInt(document.getElementById("sMin").value)||5;
+  const max   = parseInt(document.getElementById("sMax").value)||30;
+  const fab   = document.getElementById("sFab").value;
+  const val   = document.getElementById("sVal").value;
+  const dos   = document.getElementById("sDosagem").value.trim();
+  const obs   = document.getElementById("sObs").value.trim();
+  if(!nome){ toast("Informe o nome do remédio","warn"); return; }
+  const item = { id: Date.now(), nome, tipo, qtd, min, max, fab, val, dos, obs,
+    pacienteId: state.pacienteAtivo, criado: new Date().toISOString() };
+  state.estoque.push(item);
+  save(); syncToSheet(); renderEstoque();
+  hideModal("addStockModal");
+  ["sNome","sQtd","sMin","sMax","sFab","sVal","sDosagem","sObs"].forEach(id=>document.getElementById(id).value="");
+  toast(`${nome} adicionado ao estoque`,"success");
+}
+
+function atualizarBadgeEstoque() {
+  const criticos = state.estoque.filter(e => {
+    if(e.qtd <= e.min) return true;
+    if(e.val && new Date(e.val) < new Date()) return true;
+    return false;
+  });
+  const badge = document.getElementById("estoque-badge");
+  if(criticos.length > 0){
+    badge.style.display = "flex";
+    badge.textContent = criticos.length;
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function renderEstoque() {
+  const hoje = new Date();
+  const alertas = [];
+  const grid = document.getElementById("stockGrid");
+
+  if(!state.estoque.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-ico">📦</div><p>Estoque vazio.</p></div>`;
+    document.getElementById("stockAlerts").innerHTML = "";
+    return;
+  }
+
+  // Alertas
+  state.estoque.forEach(e => {
+    if(e.qtd <= e.min) alertas.push({tipo:"low",msg:`<b>${e.nome}</b>: apenas ${e.qtd} ${getUnidade(e.tipo)} restantes`});
+    if(e.val && new Date(e.val) < hoje) alertas.push({tipo:"expired",msg:`<b>${e.nome}</b>: VENCIDO em ${formatDate(e.val)}`});
+    else if(e.val){
+      const dias = Math.ceil((new Date(e.val)-hoje)/(1000*60*60*24));
+      if(dias <= 30) alertas.push({tipo:"warn",msg:`<b>${e.nome}</b>: vence em ${dias} dias (${formatDate(e.val)})`});
+    }
+  });
+
+  const alertBox = document.getElementById("stockAlerts");
+  if(alertas.length){
+    alertBox.innerHTML = alertas.map(a=>`
+      <div class="badge ${a.tipo==="expired"?"badge-r":a.tipo==="low"?"badge-r":"badge-w"}" style="padding:8px 12px;border-radius:9px;margin-bottom:6px;display:flex;align-items:center;gap:7px;width:100%;font-size:.8rem">
+        ${a.tipo==="expired"?"❌":a.tipo==="low"?"⚠️":"🕐"} <span>${a.msg}</span>
+      </div>`).join("");
+  } else {
+    alertBox.innerHTML = "";
+  }
+
+  const tipoIco = {comprimido:"💊",liquido:"🧪",capsula:"💉",gotas:"💧",frasco:"🫙"};
+
+  grid.innerHTML = state.estoque.map((e,i) => {
+    const vencido  = e.val && new Date(e.val) < hoje;
+    const critico  = e.qtd <= Math.ceil(e.min/2);
+    const baixo    = e.qtd > Math.ceil(e.min/2) && e.qtd <= e.min;
+    const cls = vencido ? "expired" : critico ? "critical" : baixo ? "low" : "";
+    const pct = e.max > 0 ? Math.min(100, Math.round(e.qtd/e.max*100)) : 0;
+    const barCls = critico ? "critical" : baixo ? "low" : "ok";
+    return `
+    <div class="stock-card ${cls}" style="animation-delay:${i*.05}s">
+      <div class="stock-top">
+        <div>
+          <div class="stock-name">${tipoIco[e.tipo]||"📦"} ${e.nome}</div>
+          <div class="stock-type">${e.tipo}${e.dos?" · "+e.dos:""}</div>
+        </div>
+        <div class="stock-qty">
+          <div class="stock-qty-num ${critico?"c-r":baixo?"c-w":"c-g"}">${e.qtd}</div>
+          <div class="stock-qty-unit">${getUnidade(e.tipo)}</div>
+        </div>
+      </div>
+      <div class="stock-prog"><div class="stock-prog-fill ${barCls}" style="width:${pct}%"></div></div>
+      <div class="stock-dates">
+        ${e.fab?`<div class="stock-date-item"><div class="stock-date-lbl">Fabricação</div><div class="stock-date-val">${formatDate(e.fab)}</div></div>`:""}
+        ${e.val?`<div class="stock-date-item"><div class="stock-date-lbl">Validade</div><div class="stock-date-val" style="color:${vencido?"var(--r-c)":""}">${formatDate(e.val)}${vencido?" ⚠️":""}</div></div>`:""}
+      </div>
+      ${e.obs?`<div style="font-size:.72rem;color:var(--t3);margin-bottom:9px">${e.obs}</div>`:""}
+      <div class="stock-actions">
+        <button class="btn btn-s btn-xs" onclick="ajustarEstoque(${e.id},-1)">−</button>
+        <button class="btn btn-g btn-xs" onclick="ajustarEstoque(${e.id},1)">+</button>
+        <button class="btn btn-s btn-xs" style="flex:1" onclick="ajustarEstoque(${e.id},0,true)">✏️ Editar qtd</button>
+        <button class="btn btn-r btn-xs" onclick="excluirEstoque(${e.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  atualizarBadgeEstoque();
+}
+
+function ajustarEstoque(id, delta, manual=false) {
+  const idx = state.estoque.findIndex(e=>e.id===id);
+  if(idx===-1) return;
+  if(manual){
+    const novo = parseInt(prompt(`Nova quantidade para ${state.estoque[idx].nome}:`, state.estoque[idx].qtd));
+    if(isNaN(novo)||novo<0) return;
+    state.estoque[idx].qtd = novo;
+  } else {
+    state.estoque[idx].qtd = Math.max(0, state.estoque[idx].qtd + delta);
+  }
+  save(); syncToSheet(); renderEstoque();
+}
+
+function excluirEstoque(id) {
+  state.estoque = state.estoque.filter(e=>e.id!==id);
+  save(); renderEstoque();
+  toast("Item removido do estoque","info");
+}
+
+function getUnidade(tipo) {
+  return {comprimido:"comp",liquido:"ml",capsula:"cáps",gotas:"gotas",frasco:"frascos"}[tipo]||"un";
+}
+
+// ══════════════════════════════════════════════
+// COMPRAS
+// ══════════════════════════════════════════════
+function salvarCompra() {
+  const nome = document.getElementById("shNome").value.trim();
+  const qtd  = parseInt(document.getElementById("shQtd").value)||1;
+  const urg  = document.getElementById("shUrg").value;
+  const data = document.getElementById("shData").value;
+  const obs  = document.getElementById("shObs").value.trim();
+  if(!nome){ toast("Informe o nome do remédio","warn"); return; }
+  state.compras.push({id:Date.now(),nome,qtd,urg,data,obs,comprado:false});
+  save(); renderCompras();
+  hideModal("addShopModal");
+  ["shNome","shQtd","shData","shObs"].forEach(id=>document.getElementById(id).value="");
+  toast(`${nome} adicionado à lista de compras`,"success");
+}
+
+function toggleComprado(id) {
+  const idx = state.compras.findIndex(c=>c.id===id);
+  if(idx===-1) return;
+  state.compras[idx].comprado = !state.compras[idx].comprado;
+  save(); renderCompras();
+}
+
+function excluirCompra(id) {
+  state.compras = state.compras.filter(c=>c.id!==id);
+  save(); renderCompras();
+}
+
+function limparComprados() {
+  state.compras = state.compras.filter(c=>!c.comprado);
+  save(); renderCompras();
+  toast("Itens comprados removidos","info");
+}
+
+function renderCompras() {
+  const total   = state.compras.length;
+  const urgente = state.compras.filter(c=>c.urg==="urgente"&&!c.comprado).length;
+  document.getElementById("shopTotal").textContent  = total;
+  document.getElementById("shopUrgent").textContent = urgente;
+
+  const el = document.getElementById("shopList");
+  if(!state.compras.length){
+    el.innerHTML = `<div class="empty"><div class="empty-ico">🛒</div><p>Lista vazia.</p></div>`; return;
+  }
+  const urgIco = {urgente:"🔴",normal:"🟡",baixo:"🟢"};
+  const sorted = [...state.compras].sort((a,b) => {
+    const order = {urgente:0,normal:1,baixo:2};
+    return order[a.urg]-order[b.urg];
+  });
+  el.innerHTML = sorted.map(c=>`
+    <div class="shop-item ${c.comprado?"bought":""}">
+      <div class="shop-check ${c.comprado?"checked":""}" onclick="toggleComprado(${c.id})">${c.comprado?"✓":""}</div>
+      <div class="shop-info">
+        <div class="shop-name">${c.nome}</div>
+        <div class="shop-detail">Qtd: ${c.qtd}${c.obs?" · "+c.obs.slice(0,40):""}</div>
+        ${c.urg==="urgente"?`<div class="shop-urgent">⚠️ Urgente</div>`:""}
+        ${c.data?`<div style="font-size:.68rem;color:var(--t3)">📅 Uso previsto: ${formatDate(c.data)}</div>`:""}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span>${urgIco[c.urg]||"🟡"}</span>
+        <button class="btn btn-r btn-xs" onclick="excluirCompra(${c.id})">✕</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ══════════════════════════════════════════════
+// HISTÓRICO
+// ══════════════════════════════════════════════
+function registrarHistorico() {
+  const hoje = new Date().toDateString();
+  const mine = state.medicacoes.filter(m => m.data === hoje);
+  const total = mine.length;
+  const tomados = mine.filter(m=>m.tomado).length;
+  if(!state.historico[hoje]) state.historico[hoje] = {};
+  state.historico[hoje].total = total;
+  state.historico[hoje].tomados = tomados;
+  state.historico[hoje].pct = total>0 ? Math.round(tomados/total*100) : 0;
+  // Por paciente
+  state.pacientes.forEach(p => {
+    const pm = mine.filter(m => String(m.pacienteId)===String(p.id));
+    const pt = pm.filter(m=>m.tomado).length;
+    if(!state.historico[hoje].pacientes) state.historico[hoje].pacientes = {};
+    state.historico[hoje].pacientes[p.id] = {total:pm.length,tomados:pt,pct:pm.length>0?Math.round(pt/pm.length*100):0,nome:p.nome};
+  });
+}
+
+function buildChart() {
+  const canvas = document.getElementById("chartCanvas");
+  const dias = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    dias.push(d);
+  }
+  const nomes = ["D","S","T","Q","Q","S","S"];
+  const hoje = new Date().getDay();
+
+  canvas.innerHTML = dias.map((d,i) => {
+    const key = d.toDateString();
+    const info = state.historico[key];
+    const pct = info ? info.pct : null;
+    const nome = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
+    let barCls = "zero", barH = "0%", pctTxt = "";
+    if(pct !== null){
+      barH = Math.max(4, pct)+"%" ;
+      barCls = pct >= 100 ? "full" : "";
+      pctTxt = pct+"%";
+    }
+    return `
+    <div class="chart-bar-group">
+      <div class="chart-bar-track" title="${nome}: ${pct!==null?pct+"%":"sem dados"}">
+        <div class="chart-bar-fill ${barCls}" style="height:${barH}" data-pct="${pctTxt}"></div>
+      </div>
+      <div class="chart-bar-lbl">${nome}</div>
+    </div>`;
+  }).join("");
+}
+
+function atualizarSelectHistorico() {
+  const sel = document.getElementById("histPatFilter");
+  if(!sel) return;
+  sel.innerHTML = `<option value="todos">Todos</option>`;
+  state.pacientes.forEach(p => {
+    sel.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+  });
+}
+
+function renderHistorico() {
+  atualizarSelectHistorico();
+  const filtPac = document.getElementById("histPatFilter")?.value || "todos";
+  const el = document.getElementById("histList");
+  const dias = Object.keys(state.historico).sort((a,b)=>new Date(b)-new Date(a));
+  if(!dias.length){
+    el.innerHTML = `<div class="empty"><div class="empty-ico">📋</div><p>Nenhum histórico.</p></div>`; return;
+  }
+  el.innerHTML = dias.slice(0,14).map(d => {
+    const info = state.historico[d];
+    let pct = info.pct;
+    let detalhe = `${info.tomados||0}/${info.total||0} doses`;
+    if(filtPac!=="todos" && info.pacientes && info.pacientes[filtPac]){
+      const pp = info.pacientes[filtPac];
+      pct = pp.pct; detalhe = `${pp.tomados}/${pp.total} doses`;
+    }
+    const cor = pct>=100?"var(--g)":pct>=50?"var(--a)":"var(--r-c)";
+    return `
+    <div class="hist-card">
+      <div class="hist-left">
+        <div class="hist-date">${new Date(d).toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short"})}</div>
+        <div class="hist-detail">${detalhe}</div>
+      </div>
+      <div class="hist-pct-bar"><div class="hist-pct-fill" style="width:${pct||0}%;background:${cor}"></div></div>
+      <div class="hist-pct-num" style="color:${cor}">${pct||0}%</div>
+    </div>`;
+  }).join("");
+
+  // Resumo semanal
+  const last7 = dias.slice(0,7);
+  const media = last7.length ? Math.round(last7.reduce((a,d)=>a+(state.historico[d]?.pct||0),0)/last7.length) : 0;
+  const melhor = last7.reduce((best,d) => (state.historico[d]?.pct||0) > (state.historico[best]?.pct||0) ? d : best, last7[0]);
+  document.getElementById("weekSummary").innerHTML = `
+    <div class="stat" style="border:none;background:var(--bg3)">
+      <div class="stat-lbl">Média 7 dias</div>
+      <div class="stat-val ${media>=80?"c-g":media>=50?"c-a":"c-r"}">${media}%</div>
+    </div>
+    <div class="stat" style="border:none;background:var(--bg3);margin-top:8px">
+      <div class="stat-lbl">Melhor dia</div>
+      <div class="stat-val c-g" style="font-size:1rem">${melhor?new Date(melhor).toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short"}):"-"}</div>
+      <div class="stat-sub">${melhor?(state.historico[melhor]?.pct||0)+"% aderência":""}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+// ALARME
+// ══════════════════════════════════════════════
+function startAlarme() {
+  if(state.alarmeAtivo) return;
+  state.alarmeAtivo = true;
+  state.alarmeInterval = setInterval(() => {
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      [440,550].forEach((f,i) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f; o.type = "sine";
+        const t = ctx.currentTime + i*.15;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(.25, t+.08);
+        g.gain.exponentialRampToValueAtTime(.001, t+.4);
+        o.start(t); o.stop(t+.4);
+      });
+    } catch {}
+  }, 5000);
+}
+
+function stopAlarme() {
+  state.alarmeAtivo = false;
+  clearInterval(state.alarmeInterval);
+}
+
+// ══════════════════════════════════════════════
+// BACKUP / RESTAURAR
+// ══════════════════════════════════════════════
+function exportarBackup() {
+  const backup = {
+    versao: 1,
+    exportadoEm: new Date().toISOString(),
+    pacientes:  state.pacientes,
+    medicacoes: state.medicacoes,
+    estoque:    state.estoque,
+    compras:    state.compras,
+    historico:  state.historico,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const data = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+  a.href     = url;
+  a.download = `medtrack-backup-${data}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Backup exportado com sucesso ✓", "success");
+}
+
+function importarBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (!d.pacientes && !d.medicacoes && !d.estoque) {
+        toast("Arquivo inválido ou corrompido", "error");
+        return;
+      }
+      if (!confirm("⚠️ Isso irá substituir TODOS os dados atuais pelo backup. Confirma?")) {
+        event.target.value = "";
+        return;
+      }
+      if (d.pacientes)  state.pacientes  = d.pacientes;
+      if (d.medicacoes) state.medicacoes = d.medicacoes;
+      if (d.estoque)    state.estoque    = d.estoque;
+      if (d.compras)    state.compras    = d.compras;
+      if (d.historico)  state.historico  = d.historico;
+      save();
+      renderAll();
+      toast("Backup restaurado com sucesso ✓", "success");
+    } catch {
+      toast("Erro ao ler o arquivo JSON", "error");
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+
+function syncToSheet()   { /* modo local — sem Google Sheets */ }
+function syncFromSheet() { /* modo local — sem Google Sheets */ }
+
+// ══════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════
+function showModal(id) { document.getElementById(id).classList.add("show"); }
+function hideModal(id) { document.getElementById(id).classList.remove("show"); }
+
+document.querySelectorAll(".overlay").forEach(ov => {
+  ov.addEventListener("click", e => { if(e.target===ov) ov.classList.remove("show"); });
+});
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, tipo="info") {
+  const ico = {success:"✅",error:"❌",info:"ℹ️",warn:"⚠️"};
+  const el = document.createElement("div");
+  el.className = `toast ${tipo}`;
+  el.innerHTML = `<span>${ico[tipo]||"ℹ️"}</span><span>${msg}</span>`;
+  document.getElementById("tc").appendChild(el);
+  setTimeout(()=>{ el.style.animation="tOut .3s var(--ease) forwards"; setTimeout(()=>el.remove(),300); }, 3500);
+}
+
+// ══════════════════════════════════════════════
+// LOGOUT
+// ══════════════════════════════════════════════
+function logout() {
+  hideModal("logoutModal");
+  document.getElementById("app").style.opacity="0";
+  document.getElementById("app").style.transition="opacity .4s";
+  setTimeout(()=>{
+    document.getElementById("splash").style.opacity="1";
+    document.getElementById("splash").style.visibility="visible";
+    document.getElementById("splash").classList.remove("out");
+    document.getElementById("splash").innerHTML=`
+      <div class="sp-orbit"><div class="sp-ring"></div><div class="sp-ring"></div><div class="sp-ring"></div><div class="sp-core">👋</div></div>
+      <div class="sp-wordmark">Até logo!</div>
+      <div class="sp-tag">Dados salvos com segurança</div>`;
+    setTimeout(()=>location.reload(),2000);
+  },400);
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function formatDate(str) {
+  if(!str) return "";
+  const d = new Date(str+"T00:00:00");
+  return d.toLocaleDateString("pt-BR");
+}
+
+// ══════════════════════════════════════════════
+// PWA — SERVICE WORKER + INSTALL
+// ══════════════════════════════════════════════
+(function initPWA() {
+  // ── Registrar Service Worker ──
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+          console.log('[MedTrack] Service Worker registrado. Escopo:', reg.scope);
+          // Verifica atualizações em background
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                toast('Nova versão disponível! Recarregue o app. 🔄', 'info');
+              }
+            });
+          });
+        })
+        .catch(err => console.warn('[MedTrack] Service Worker erro:', err));
+    });
+  }
+
+  // ── Banner de instalação (Android/Desktop) ──
+  let deferredPrompt = null;
+  const banner = document.getElementById('pwa-banner');
+  const btnInstall = document.getElementById('pwa-install');
+  const btnDismiss = document.getElementById('pwa-dismiss');
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Mostra o banner só se o usuário nunca dispensou
+    if (!localStorage.getItem('mt_pwa_dismissed')) {
+      setTimeout(() => banner.classList.add('show'), 3500);
+    }
+  });
+
+  btnInstall && btnInstall.addEventListener('click', async () => {
+    banner.classList.remove('show');
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      toast('MedTrack instalado com sucesso! 🎉', 'success');
+    }
+    deferredPrompt = null;
+  });
+
+  btnDismiss && btnDismiss.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem('mt_pwa_dismissed', '1');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    banner.classList.remove('show');
+    deferredPrompt = null;
+    toast('App instalado! Acesse pela tela inicial 📲', 'success');
+  });
+
+  // ── Barra de offline ──
+  const offlineBar = document.getElementById('offline-bar');
+  const updateOfflineBar = () => {
+    if (!navigator.onLine) {
+      offlineBar.classList.add('show');
+    } else {
+      offlineBar.classList.remove('show');
+    }
+  };
+  updateOfflineBar();
+  window.addEventListener('online',  updateOfflineBar);
+  window.addEventListener('offline', updateOfflineBar);
+})();
+</script>
+</body>
+</html>
