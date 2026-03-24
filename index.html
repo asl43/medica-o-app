@@ -988,7 +988,7 @@ textarea.fi{height:auto;padding:10px 12px;resize:vertical;min-height:72px}
   <div class="modal" style="max-width:360px;text-align:center">
     <div style="font-size:2.5rem;margin-bottom:12px">⏻</div>
     <div style="font-size:1.1rem;font-weight:800;margin-bottom:8px">Sair do sistema?</div>
-    <div style="font-size:.85rem;color:var(--t2);margin-bottom:22px">Dados sincronizados com Google Sheets.</div>
+    <div style="font-size:.85rem;color:var(--t2);margin-bottom:22px">Dados salvos localmente no dispositivo.</div>
     <div style="display:flex;gap:10px;justify-content:center">
       <button class="btn btn-s" style="min-width:100px" onclick="hideModal('logoutModal')">Cancelar</button>
       <button class="btn btn-p" style="min-width:100px" onclick="logout()">Sair agora</button>
@@ -2058,8 +2058,8 @@ function importarBackup(event) {
 }
 
 
-function syncToSheet()   { /* modo local — sem Google Sheets */ }
-function syncFromSheet() { /* modo local — sem Google Sheets */ }
+function syncToSheet()   { /* modo local */ }
+function syncFromSheet() { /* modo local */ }
 
 // ══════════════════════════════════════════════
 // MODAL
